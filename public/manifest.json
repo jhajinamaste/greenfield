@@ -1,0 +1,9 @@
+﻿{
+  "name": "Greenfield ERP",
+  "short_name": "Greenfield",
+  "start_url": "/greenfield/public/dashboard",
+  "display": "standalone",
+  "background_color": "#f2f5f9",
+  "theme_color": "#0f2a43",
+  "icons": []
+}
