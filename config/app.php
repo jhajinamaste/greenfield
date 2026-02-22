@@ -12,4 +12,12 @@ return [
     'secure_cookies' => env('SECURE_COOKIES', 'true') === 'true',
     'health_public' => env('HEALTH_PUBLIC', 'false') === 'true',
     'password_algo' => env('PASSWORD_ALGO', 'argon2id'),
+    'accounting_strict_mode' => in_array(
+        strtolower((string) env(
+            'ACCOUNTING_STRICT_MODE',
+            env('APP_ENV', 'production') === 'production' ? 'true' : 'false'
+        )),
+        ['1', 'true', 'yes', 'on'],
+        true
+    ),
 ];

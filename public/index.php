@@ -16,7 +16,10 @@ use App\Domain\Accounting\JournalPostingService;
 use App\Domain\Accounting\LedgerService;
 use App\Domain\Audit\AuditLogService;
 use App\Domain\Auth\AuthService;
+use App\Domain\Config\ConfigService;
 use App\Domain\Dashboard\DashboardService;
+use App\Domain\Inventory\InventoryCostingService;
+use App\Domain\Inventory\InventoryPostingService;
 use App\Domain\Tenant\TenantContextService;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -28,6 +31,9 @@ use App\Infrastructure\Repositories\Audit\AuditLogRepository;
 use App\Infrastructure\Repositories\Auth\UserRepository;
 use App\Infrastructure\Repositories\Config\ConfigRepository;
 use App\Infrastructure\Repositories\FeatureFlags\FeatureFlagRepository;
+use App\Infrastructure\Repositories\Inventory\InventoryLocationRepository;
+use App\Infrastructure\Repositories\Inventory\ProductRepository;
+use App\Infrastructure\Repositories\Inventory\StockLedgerRepository;
 use App\Infrastructure\Repositories\Tenant\BranchRepository;
 use App\Infrastructure\Repositories\Tenant\OrganizationRepository;
 
@@ -70,26 +76,48 @@ $userRepo = new UserRepository($pdo, $scope);
 $orgRepo = new OrganizationRepository($pdo);
 $auditRepo = new AuditLogRepository($pdo, $scope);
 $configRepo = new ConfigRepository($pdo, $scope, $crypto);
+$configService = new ConfigService($configRepo, $appConfig['accounting_strict_mode']);
 $featureFlagRepo = new FeatureFlagRepository($pdo, $scope);
 $chartOfAccountRepo = new ChartOfAccountRepository($pdo, $scope);
 $journalEntryRepo = new JournalEntryRepository($pdo, $scope);
 $accountingPeriodRepo = new AccountingPeriodRepository($pdo, $scope);
+$productRepo = new ProductRepository($pdo, $scope);
+$inventoryLocationRepo = new InventoryLocationRepository($pdo, $scope);
+$stockLedgerRepo = new StockLedgerRepository($pdo, $scope);
 $branchRepo = new BranchRepository($pdo, $scope);
+$accountingStrictMode = isset($_SESSION['organization_id'])
+    ? $configService->accountingStrictMode((int) $_SESSION['organization_id'])
+    : $appConfig['accounting_strict_mode'];
 $auditService = new AuditLogService($auditRepo);
 $authService = new AuthService($userRepo, $auditService, $tx);
-$accountingPeriodGuard = new AccountingPeriodGuard($accountingPeriodRepo);
+$financialReportService = new FinancialReportService($journalEntryRepo, $auditService, $accountingStrictMode, $stockLedgerRepo);
+$accountingPeriodGuard = new AccountingPeriodGuard($accountingPeriodRepo, $financialReportService);
 $journalPostingService = new JournalPostingService(
     $tx,
     $journalEntryRepo,
     $chartOfAccountRepo,
     $accountingPeriodGuard,
     $branchRepo,
+    $stockLedgerRepo,
+    $auditService
+);
+$inventoryCostingService = new InventoryCostingService($stockLedgerRepo);
+$inventoryPostingService = new InventoryPostingService(
+    $tx,
+    $inventoryCostingService,
+    $stockLedgerRepo,
+    $productRepo,
+    $inventoryLocationRepo,
+    $branchRepo,
+    $accountingPeriodGuard,
+    $accountingPeriodRepo,
+    $journalPostingService,
+    $chartOfAccountRepo,
     $auditService
 );
 $ledgerService = new LedgerService($journalEntryRepo);
-$financialReportService = new FinancialReportService($journalEntryRepo);
 $tenantService = new TenantContextService($orgRepo);
-$dashboardService = new DashboardService($financialReportService);
+$dashboardService = new DashboardService($financialReportService, $configService);
 $healthAccessMiddleware = new HealthAccessMiddleware($appConfig['health_public']);
 
 $authController = new AuthController($authService, $tenantService);

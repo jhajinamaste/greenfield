@@ -15,6 +15,11 @@ final class TransactionManager
 
     public function run(callable $callback): mixed
     {
+        if ($this->pdo->inTransaction()) {
+            // Allow composition of atomic workflows without creating nested DB transactions.
+            return $callback();
+        }
+
         $this->pdo->beginTransaction();
         try {
             $result = $callback();
@@ -26,5 +31,10 @@ final class TransactionManager
             }
             throw $e;
         }
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->pdo->inTransaction();
     }
 }

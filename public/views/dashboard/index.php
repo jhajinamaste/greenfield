@@ -25,6 +25,13 @@
         </header>
         <section class="status-row">
             <span class="status-pill"><?= \App\Core\Security\InputSanitizer::esc((string) ($summary['trial_balance_status'] ?? 'Balanced')) ?></span>
+            <?php
+                $journalIndicator = (string) ($summary['journal_balance_integrity_indicator'] ?? 'green');
+                $journalClass = $journalIndicator === 'red' ? 'status-pill status-pill-red' : 'status-pill status-pill-green';
+            ?>
+            <span class="<?= $journalClass ?>">
+                Journal Integrity: <?= \App\Core\Security\InputSanitizer::esc((string) ($summary['journal_balance_integrity_status'] ?? 'Balanced')) ?>
+            </span>
         </section>
         <section class="kpi-grid">
             <?php foreach ($summary['kpis'] as $kpi): ?>

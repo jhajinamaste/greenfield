@@ -17,7 +17,10 @@ final class DashboardController
 
     public function index(Request $request): never
     {
-        $summary = $this->dashboard->summary();
+        $summary = $this->dashboard->summary(
+            isset($request->session['organization_id']) ? (int) $request->session['organization_id'] : null,
+            isset($request->session['branch_id']) ? (int) $request->session['branch_id'] : null
+        );
         $csrf = CsrfToken::ensure($request->session);
 
         Response::view('public/views/dashboard/index.php', [

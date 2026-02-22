@@ -1,0 +1,77 @@
+Greenfield ERP - Available Features (Plain Language)
+Last Updated: 2026-02-22
+
+1) Access and Workspace Control
+- Secure login using Organization Code + Username + Password.
+- Each organization has its own isolated workspace.
+- Branch-level access is supported, so users only work in allowed branches.
+- Role-based access is active (for example: Super Admin, Org Admin, Auditor).
+- Session timeout is enabled for safety.
+
+2) Security and Trust
+- Sensitive settings are stored securely.
+- Financial and stock records are protected from direct tampering.
+- Full activity history is maintained for key actions.
+- Health endpoint access is restricted to authorized users unless explicitly opened.
+- Accounting strict mode can be set per environment (hard-stop mode or warning mode).
+
+3) Core Accounting (Operational)
+- Chart of Accounts is available with standard account categories.
+- Double-entry journal posting is active.
+- Trial Balance is available.
+- Profit & Loss report is available.
+- Balance Sheet report is available.
+- Accounting periods can be opened/closed, with safeguards to prevent invalid posting.
+- Core accounting balance checks are built in to detect inconsistencies.
+
+4) Inventory Management (Operational)
+- Product master is available (inventory/service type support).
+- Inventory locations are available (store, warehouse, transit, etc.).
+- Stock movement ledger is active (purchase, sale issue, adjustment, transfer).
+- Weighted-average costing is active.
+- Overselling protection is active (prevents issuing more than available stock).
+- Transfer lifecycle is supported:
+  - transfer out to transit
+  - transfer receive into destination
+- Inventory value and COGS tracking are connected to accounting.
+
+5) Accounting + Inventory Integrity Controls
+- Inventory value is continuously checked against accounting balance.
+- Inventory-to-accounting linkage checks are in place to detect mismatches.
+- Journal-to-stock linkage checks ensure inventory movements and accounting entries stay connected.
+- Manual direct entries into the main Inventory account are blocked.
+- Negative stock drift detection is in place and can raise warnings/errors.
+- Organization-wide journal balance integrity check is available to detect any global debit/credit mismatch.
+- Critical integrity issues are logged and surfaced for review.
+
+6) Dashboard and Daily Visibility
+- Executive dashboard is available after login.
+- KPI cards include:
+  - Today Revenue
+  - Total Assets
+  - Total Liabilities
+  - Net Profit (YTD)
+  - Trial Balance Status
+  - Inventory Integrity Status
+  - Stock-Journal Link Status
+  - Negative Inventory Status
+  - Journal Global Balance Status
+- Dashboard includes high-level business chart panels (current placeholders).
+
+7) PWA and Mobile Foundation
+- Mobile-responsive app layout is active.
+- App manifest is available for installable app behavior.
+- Service worker is active for static asset caching.
+
+8) Not Yet Available (Do Not Market as Live)
+- Billing and receivables workflows (invoice lifecycle, payment allocation, aging automation).
+- Payment gateway stack and webhook processing.
+- Bank feed and reconciliation workflows.
+- Tax lifecycle engine.
+- Payroll and HR module.
+- CRM module.
+- Forecasting/risk scoring module.
+
+Maintenance Rule:
+- Keep this file focused on business-facing features only.
+- Update this file after each implementation phase.

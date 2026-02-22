@@ -26,6 +26,8 @@ body { margin: 0; font-family: "Segoe UI", Tahoma, sans-serif; background: linea
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .status-row { margin-bottom: 12px; }
 .status-pill { display: inline-block; background: #e8f4ff; color: #14314d; border: 1px solid #b7d7f2; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+.status-pill-green { background: #e9f8ef; color: #14532d; border-color: #9ed8b2; margin-left: 8px; }
+.status-pill-red { background: #fdecec; color: #8a1c1c; border-color: #efb3b3; margin-left: 8px; }
 .kpi-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin-bottom: 16px; }
 .kpi-card, .chart-card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: 0 6px 16px rgba(15,42,67,0.08); }
 .chart-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); }

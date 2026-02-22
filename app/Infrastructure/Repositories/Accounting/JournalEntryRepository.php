@@ -260,4 +260,175 @@ final class JournalEntryRepository extends BaseRepository
 
         return $stmt->fetchAll();
     }
+
+    public function sumAccountNetByCodeAsOf(
+        string $accountCode,
+        string $asOfDate,
+        ?int $branchId = null,
+        ?int $organizationId = null
+    ): string {
+        $organizationId = $this->organizationId($organizationId);
+        $branchId = $this->branchId($branchId);
+
+        $sql = 'SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) AS net_amount
+                FROM journal_entry_lines jel
+                INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+                INNER JOIN chart_of_accounts coa ON coa.id = jel.account_id
+                WHERE je.organization_id = :org_je
+                  AND coa.organization_id = :org_coa
+                  AND coa.code = :account_code
+                  AND je.entry_date <= :as_of_date';
+
+        $params = [
+            ':org_je' => $organizationId,
+            ':org_coa' => $organizationId,
+            ':account_code' => $accountCode,
+            ':as_of_date' => $asOfDate,
+        ];
+
+        if ($branchId !== null) {
+            $sql .= ' AND je.branch_id = :branch_id';
+            $params[':branch_id'] = $branchId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (string) ($row['net_amount'] ?? '0');
+    }
+
+    public function sumAccountNetByCodeBetween(
+        string $accountCode,
+        string $fromDate,
+        string $toDate,
+        ?int $branchId = null,
+        ?int $organizationId = null
+    ): string {
+        $organizationId = $this->organizationId($organizationId);
+        $branchId = $this->branchId($branchId);
+
+        $sql = 'SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) AS net_amount
+                FROM journal_entry_lines jel
+                INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+                INNER JOIN chart_of_accounts coa ON coa.id = jel.account_id
+                WHERE je.organization_id = :org_je
+                  AND coa.organization_id = :org_coa
+                  AND coa.code = :account_code
+                  AND je.entry_date BETWEEN :from_date AND :to_date';
+
+        $params = [
+            ':org_je' => $organizationId,
+            ':org_coa' => $organizationId,
+            ':account_code' => $accountCode,
+            ':from_date' => $fromDate,
+            ':to_date' => $toDate,
+        ];
+
+        if ($branchId !== null) {
+            $sql .= ' AND je.branch_id = :branch_id';
+            $params[':branch_id'] = $branchId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (string) ($row['net_amount'] ?? '0');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function fetchJournalCorrelationIds(
+        ?int $branchId = null,
+        ?int $organizationId = null
+    ): array {
+        $organizationId = $this->organizationId($organizationId);
+        $branchId = $this->branchId($branchId);
+
+        $sql = 'SELECT DISTINCT correlation_id
+                FROM journal_entries
+                WHERE organization_id = :organization_id
+                  AND correlation_id <> \'\'';
+        $params = [
+            ':organization_id' => $organizationId,
+        ];
+
+        if ($branchId !== null) {
+            $sql .= ' AND branch_id = :branch_id';
+            $params[':branch_id'] = $branchId;
+        }
+
+        $sql .= ' ORDER BY correlation_id ASC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        return array_map(static fn(array $row): string => (string) $row['correlation_id'], $rows);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function fetchJournalCorrelationIdsByAccountCode(
+        string $accountCode,
+        ?int $branchId = null,
+        ?int $organizationId = null
+    ): array {
+        $organizationId = $this->organizationId($organizationId);
+        $branchId = $this->branchId($branchId);
+
+        $sql = 'SELECT DISTINCT je.correlation_id
+                FROM journal_entries je
+                INNER JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id
+                INNER JOIN chart_of_accounts coa ON coa.id = jel.account_id
+                WHERE je.organization_id = :organization_id
+                  AND coa.organization_id = :organization_id_coa
+                  AND coa.code = :account_code
+                  AND je.correlation_id <> \'\'';
+        $params = [
+            ':organization_id' => $organizationId,
+            ':organization_id_coa' => $organizationId,
+            ':account_code' => $accountCode,
+        ];
+
+        if ($branchId !== null) {
+            $sql .= ' AND je.branch_id = :branch_id';
+            $params[':branch_id'] = $branchId;
+        }
+
+        $sql .= ' ORDER BY je.correlation_id ASC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        return array_map(static fn(array $row): string => (string) $row['correlation_id'], $rows);
+    }
+
+    /**
+     * @return array{total_debits:string,total_credits:string}
+     */
+    public function fetchOrganizationJournalTotals(int $organizationId): array
+    {
+        $organizationId = $this->organizationId($organizationId);
+        $sql = 'SELECT
+                    COALESCE(SUM(jel.debit_amount), 0) AS total_debits,
+                    COALESCE(SUM(jel.credit_amount), 0) AS total_credits
+                FROM journal_entry_lines jel
+                INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.organization_id = :organization_id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':organization_id' => $organizationId,
+        ]);
+
+        $row = $stmt->fetch() ?: ['total_debits' => '0', 'total_credits' => '0'];
+        return [
+            'total_debits' => (string) $row['total_debits'],
+            'total_credits' => (string) $row['total_credits'],
+        ];
+    }
 }
